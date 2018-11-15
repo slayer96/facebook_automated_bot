@@ -1,7 +1,6 @@
 import re
 import logging
 import random
-import string
 import json
 from time import sleep
 from datetime import datetime
@@ -64,7 +63,6 @@ class FacebookBot:
         sleep(1)
         self.driver.find_element_by_name('pass').submit()
         sleep(2)
-
         if len(self.driver.find_elements_by_xpath('//div[@data-click="profile_icon"]')) > 0:
             logger.info('Login Successful!')
             return True
