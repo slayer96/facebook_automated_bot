@@ -1,18 +1,19 @@
-from datetime import datetime
+import re
+import logging
 import random
 import string
 import json
 from time import sleep
+from datetime import datetime
 import urllib.request
-import time
-import re
 import lxml.html
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait, Select
+from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from apscheduler.schedulers.blocking import BlockingScheduler
 from googletrans import Translator
-import logging
+
 from constants import *
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
@@ -41,7 +42,7 @@ class FacebookBot:
             'translate.google.com',
             'translate.google.co.kr',
         ])
-        self.driver = webdriver.Chrome()
+        self.driver = webdriver.PhantomJS()
         self.driver.implicitly_wait(10)
         self.driver.set_page_load_timeout(60)
 
@@ -96,7 +97,7 @@ class FacebookBot:
         second_what_is_on_my_mind_element.send_keys('\n')
         for link in post['links']:
             second_what_is_on_my_mind_element.send_keys(link)
-            time.sleep(1)
+            sleep(1)
         for photo_url in post['photos']:
             second_what_is_on_my_mind_element.send_keys('\n')
             file_input = self.driver.find_element_by_xpath('//div[@class="_3jk"]/input[contains(@accept, "video/*,")]')
@@ -104,10 +105,10 @@ class FacebookBot:
         for video_url in post['videos']:
             file_input = self.driver.find_element_by_xpath('//div[@class="_3jk"]/input[contains(@accept, "video/*,")]')
             file_input.send_keys(self.send_file_to_form(video_url, 'tmp.mp4'))
-        time.sleep(20)
+        sleep(20)
         button = self.driver.find_element_by_xpath('//button[@data-testid="react-composer-post-button"]')
         button.click()
-        time.sleep(5)
+        sleep(5)
 
     def translate_post(self, posts):
         for post in posts:
@@ -128,7 +129,7 @@ class FacebookBot:
         print('attached video', attached_videos)
         print('attached photos', attached_photos)
         print('attached links', attached_links)
-        time.sleep(12)
+        sleep(12)
         post_dict['photos'] = attached_photos
         post_dict['links'] = attached_links
         post_dict['videos'] = attached_videos
@@ -136,7 +137,7 @@ class FacebookBot:
 
     def get_new_posts(self, page_url):
         self.driver.get(page_url)
-        time.sleep(2)
+        sleep(2)
         logger.info('Processing Page...')
         doc = lxml.html.fromstring(self.driver.page_source)
         doc.make_links_absolute(self.driver.current_url)
@@ -158,8 +159,14 @@ class FacebookBot:
             sleep(10)
 
 
-if __name__ == '__main__':
+def run_bot():
     logging.info('START')
     browser = FacebookBot(LOGIN, PASSWORD)
-    browser.run(['https://www.facebook.com/pg/Oilers.NHL/posts/'])
+    browser.run(TEAM_PAGES)
     browser.driver.quit()
+
+
+if __name__ == '__main__':
+    scheduler = BlockingScheduler()
+    scheduler.add_job(run_bot(), 'interval', hours=1)
+    scheduler.start()

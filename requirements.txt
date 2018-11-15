@@ -1,0 +1,4 @@
+git+https://github.com/BoseCorp/py-googletrans.git
+apscheduler
+lxml
+selenium
